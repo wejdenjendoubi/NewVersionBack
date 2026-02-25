@@ -34,7 +34,7 @@ public class SiteServiceImpl implements SiteService {
     @Override
     public Site updateSite(Integer id, Site siteDetails) {
         Site site = getSiteById(id);
-        site.setNameSite(siteDetails.getSiteName());
+        site.setSiteName(siteDetails.getSiteName());
         site.setUpdatedAt(new Date());
         return siteRepository.save(site);
     }

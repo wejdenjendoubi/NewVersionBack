@@ -1,30 +1,55 @@
 package com.example.CWMS.controller;
 
-import com.example.CWMS.model.Role;
+import com.example.CWMS.dto.*;
 import com.example.CWMS.service.RoleService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/roles")
-@CrossOrigin(origins = "*") // Permet la connexion avec Angular
+@RequestMapping("/api/admin/roles")
+@RequiredArgsConstructor
 public class RoleController {
 
-    @Autowired
-    private RoleService roleService;
-
-    // GET /api/roles : Pour remplir la liste des rôles dans l'interface Admin
+    private final RoleService roleService;
     @GetMapping
-    public List<Role> getAllRoles() {
-        return roleService.getAllRoles();
+
+    public ResponseEntity<ApiResponse<List<RoleDTO>>> getAllRoles() {
+        return ResponseEntity.ok(ApiResponse.success(roleService.getAllRoles()));
     }
 
-    // POST /api/roles : Pour créer un nouveau rôle
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<RoleDTO>> getRoleById(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(roleService.getRoleById(id)));
+    }
+
     @PostMapping
-    public Role createRole(@RequestBody Role role) {
-        return roleService.saveRole(role);
+    public ResponseEntity<ApiResponse<RoleDTO>> createRole(@RequestBody RoleDTO request) {
+        return ResponseEntity.ok(ApiResponse.success("Role created", roleService.createRole(request)));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<RoleDTO>> updateRole(@PathVariable Integer id,
+                                                           @RequestBody RoleDTO request) {
+        return ResponseEntity.ok(ApiResponse.success("Role updated", roleService.updateRole(id, request)));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable Integer id) {
+        roleService.deleteRole(id);
+        return ResponseEntity.ok(ApiResponse.success("Role deleted", null));
+    }
+
+    @PostMapping("/assign-menus")
+    public ResponseEntity<ApiResponse<Void>> assignMenus(@RequestBody RoleMenuRequest request) {
+        roleService.assignMenusToRole(request);
+        return ResponseEntity.ok(ApiResponse.success("Menus assigned to role", null));
+    }
+
+    @GetMapping("/{id}/menus")
+    public ResponseEntity<ApiResponse<List<Integer>>> getRoleMenus(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(roleService.getMenuIdsByRole(id)));
     }
 }

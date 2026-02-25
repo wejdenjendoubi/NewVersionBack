@@ -1,5 +1,6 @@
 package com.example.CWMS.controller;
 
+import com.example.CWMS.dto.ApiResponse; // Import de ton DTO ApiResponse
 import com.example.CWMS.dto.UserDTO;
 import com.example.CWMS.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,55 +11,51 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin") // Protection globale par ROLE_ADMIN dans SecurityConfig
+@RequestMapping("/api/admin")
 public class AdminController {
 
     @Autowired
     private UserService userService;
 
-    // 1. Dashboard : Simple message de bienvenue ou stats
+    // 1. Dashboard : Simple message de bienvenue
     @GetMapping("/dashboard")
-    public ResponseEntity<String> getAdminStats() {
-        return ResponseEntity.ok("Bienvenue sur le panneau d'administration. Accès réservé aux administrateurs.");
+    public ResponseEntity<ApiResponse<String>> getAdminStats() {
+        return ResponseEntity.ok(ApiResponse.success("Bienvenue sur le panneau d'administration."));
     }
 
     // 2. Liste de tous les utilisateurs
-    // URL: GET /api/admin/users
     @GetMapping("/users")
-    public ResponseEntity<List<UserDTO>> listUsers() {
+    public ResponseEntity<ApiResponse<List<UserDTO>>> listUsers() {
         List<UserDTO> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
+        return ResponseEntity.ok(ApiResponse.success(users));
     }
 
-    // 3. Récupérer un utilisateur spécifique par son ID
-    // URL: GET /api/admin/users/1
+    // 3. Récupérer un utilisateur spécifique
     @GetMapping("/users/{id}")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<UserDTO>> getUserById(@PathVariable Integer id) {
         UserDTO user = userService.getUserById(id);
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(ApiResponse.success(user));
     }
 
-    // 4. Créer un nouvel utilisateur (ex: Admin qui crée un employé)
-    // URL: POST /api/admin/users
+    // 4. Créer un nouvel utilisateur
     @PostMapping("/users")
-    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
+    public ResponseEntity<ApiResponse<UserDTO>> createUser(@RequestBody UserDTO userDTO) {
         UserDTO createdUser = userService.createUser(userDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Utilisateur créé avec succès", createdUser));
     }
 
     // 5. Modifier un utilisateur
-    // URL: PUT /api/admin/users/1
     @PutMapping("/users/{id}")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Integer id, @RequestBody UserDTO userDTO) {
+    public ResponseEntity<ApiResponse<UserDTO>> updateUser(@PathVariable Integer id, @RequestBody UserDTO userDTO) {
         UserDTO updatedUser = userService.updateUser(id, userDTO);
-        return ResponseEntity.ok(updatedUser);
+        return ResponseEntity.ok(ApiResponse.success("Utilisateur mis à jour", updatedUser));
     }
 
     // 6. Supprimer un utilisateur
-    // URL: DELETE /api/admin/users/1
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Integer id) {
         userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Utilisateur supprimé", null));
     }
 }

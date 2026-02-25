@@ -1,60 +1,31 @@
 package com.example.CWMS.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.Date;
 
 @Entity
 @Table(name = "Sites")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Site {
     @Id
-    private int Id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "SiteId")
+    private int siteId;
 
-    @Column(name = "NameSite")
-    private String NameSite;
+    @Column(name = "SiteName", nullable = false, length = 100)
+    private String siteName;
 
-    @Column(name="CreatedAt")
+    @Column(name = "CreatedAt")
     private Date CreatedAt;
 
-    @Column(name="UpdatedAt")
+    @Column(name = "UpdatedAt")
     private Date UpdatedAt;
-
-    // Constructeur par défaut
-    public Site() {}
-
-    // --- GETTERS ET SETTERS ---
-
-    public int getId() {
-        return Id;
-    }
-
-    public void setId(int id) {
-        this.Id = id;
-    }
-
-    public String getSiteName() {
-        return NameSite;
-    }
-
-    public void setNameSite(String nameSite) {
-        this.NameSite = nameSite;
-    }
-
-    public Date getCreatedAt() {
-        return CreatedAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.CreatedAt = createdAt;
-    }
-
-    public Date getUpdatedAt() {
-        return UpdatedAt;
-    }
-
-    public void setUpdatedAt(Date updatedAt) {
-        this.UpdatedAt = updatedAt;
-    }
 }

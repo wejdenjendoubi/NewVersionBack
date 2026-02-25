@@ -3,38 +3,33 @@ package com.example.CWMS.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
-@Table(name = "Roles")
+@Table(name = "RoleMenuMappings")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Role {
+public class RoleMenuMapping {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "RoleId")
-    private Integer roleId;
+    @Column(name = "RoleMenuMappingId")
+    private Integer roleMenuMappingId;
 
-    @Column(name = "RoleName", nullable = false, length = 100)
-    private String roleName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "RoleId", nullable = false)
+    private Role role;
 
-    @Column(name = "Description", length = 255)
-    private String description;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "MenuItemId", nullable = false)
+    private MenuItem menuItem;
 
     @Column(name = "CreatedAt")
     private LocalDateTime createdAt;
 
     @Column(name = "UpdatedAt")
     private LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<User> users;
-
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<RoleMenuMapping> menuMappings;
 
     @PrePersist
     protected void onCreate() {

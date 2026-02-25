@@ -6,6 +6,8 @@ import com.example.CWMS.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Date;
 import java.util.UUID;
@@ -53,13 +55,13 @@ public class UserServiceImpl implements UserService {
         // 3. Hachage du mot de passe pour la sécurité
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
 
-        user.setCreatedAt(new Date());
-        user.setIsActive(1); // Activation par défaut
+        user.setCreatedAt(LocalDateTime.now());
+        user.setIsActive(true); // Activation par défaut
 
         User savedUser = userRepository.save(user);
 
         // 4. Envoi du mail avec les identifiants en clair (avant hachage)
-        emailService.sendCredentials(savedUser.getEmail(), savedUser.getUserName(), rawPassword);
+        emailService.sendCredentials(savedUser.getEmail(), savedUser.getUsername(), rawPassword);
 
         return mapToDTO(savedUser);
     }
@@ -71,7 +73,7 @@ public class UserServiceImpl implements UserService {
 
 
         updateUserFields(user, userDTO);
-        user.setUpdatedAt(new Date());
+        user.setUpdatedAt(LocalDateTime.now());
 
         // Sauvegarde et retour
         User updatedUser = userRepository.save(user);
@@ -85,7 +87,7 @@ public class UserServiceImpl implements UserService {
 
     private void updateUserFields(User user, UserDTO dto) {
         // On ne met à jour que si le DTO contient une valeur (évite les NULL en base)
-        if (dto.getUserName() != null) user.setUserName(dto.getUserName());
+        if (dto.getUserName() != null) user.setUsername(dto.getUserName());
         if (dto.getEmail() != null) user.setEmail(dto.getEmail());
         if (dto.getFirstName() != null) user.setFirstName(dto.getFirstName());
         if (dto.getLastName() != null) user.setLastName(dto.getLastName());
@@ -105,11 +107,10 @@ public class UserServiceImpl implements UserService {
     private UserDTO mapToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getUserId());
-        dto.setUserName(user.getUserName());
+        dto.setUserName(user.getUsername());
         dto.setEmail(user.getEmail());
         dto.setFirstName(user.getFirstName());
         dto.setLastName(user.getLastName());
-        dto.setIsActive(user.getIsActive());
 
         if (user.getRole() != null) {
             dto.setRoleName(user.getRole().getRoleName());

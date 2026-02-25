@@ -27,7 +27,7 @@ public class JwtUtils {
                 .setSubject(userPrincipal.getUsername())
                 .claim("authorities", roles) // INDISPENSABLE pour Angular
                 .setIssuedAt(new java.util.Date())
-                .setExpiration(new java.util.Date((new java.util.Date()).getTime() + 86400000))
+                .setExpiration(new java.util.Date((new java.util.Date()).getTime() + jwtExpirationMs))
                 .signWith(key)
                 .compact();
     }
