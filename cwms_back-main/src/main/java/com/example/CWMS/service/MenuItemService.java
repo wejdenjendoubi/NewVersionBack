@@ -4,6 +4,8 @@ import com.example.CWMS.dto.MenuItemDTO;
 import com.example.CWMS.model.MenuItem;
 import com.example.CWMS.model.User;
 import com.example.CWMS.repository.MenuItemRepository;
+import com.example.CWMS.repository.RoleMenuMappingRepository;
+import com.example.CWMS.repository.RoleRepository;
 import com.example.CWMS.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +20,9 @@ public class MenuItemService {
 
     private final MenuItemRepository menuItemRepository;
     private final UserRepository userRepository;
+
+    private final RoleMenuMappingRepository roleMenuMappingRepository;
+    private final RoleRepository roleRepository;
 
     public List<MenuItemDTO> getMenuItemsForCurrentUser() {
         // 1. Récupérer l'email de l'utilisateur connecté via le SecurityContext
@@ -80,4 +85,35 @@ public class MenuItemService {
                 .updatedAt(item.getUpdatedAt())
                 .build();
     }
+
+    @Transactional
+    public void saveRoleMenuMappings(Integer roleId, List<Integer> menuItemIds) {
+        // 1. Supprimer les anciens accès pour ce rôle
+        roleMenuMappingRepository.deleteByRoleId(roleId);
+
+        // 2. Récupérer l'entité Role
+        com.example.CWMS.model.Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Rôle non trouvé"));
+
+        // 3. Créer les nouveaux mappings
+        List<com.example.CWMS.model.RoleMenuMapping> mappings = menuItemIds.stream()
+                .map(menuId -> {
+                    com.example.CWMS.model.MenuItem item = menuItemRepository.findById(menuId)
+                            .orElseThrow(() -> new RuntimeException("Menu " + menuId + " non trouvé"));
+
+                    return com.example.CWMS.model.RoleMenuMapping.builder()
+                            .role(role)
+                            .menuItem(item)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        roleMenuMappingRepository.saveAll(mappings);
+    }
+
+    // Ajoutez également cette méthode pour récupérer les IDs déjà cochés dans l'interface
+    public List<Integer> getMenuItemIdsForRole(Integer roleId) {
+        return roleMenuMappingRepository.findMenuItemIdsByRoleId(roleId);
+    }
+
 }

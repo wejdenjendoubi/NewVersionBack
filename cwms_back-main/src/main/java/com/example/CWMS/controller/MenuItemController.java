@@ -41,4 +41,17 @@ public class MenuItemController {
         menuItemService.deleteMenuItem(id);
         return ResponseEntity.ok(ApiResponse.success("Menu item deleted", null));
     }
+
+
+    @GetMapping("/permissions/role/{roleId}")
+    public ResponseEntity<ApiResponse<List<Integer>>> getRolePermissions(@PathVariable Integer roleId) {
+        return ResponseEntity.ok(ApiResponse.success(menuItemService.getMenuItemIdsForRole(roleId)));
+    }
+
+    // Endpoint pour sauvegarder (utilisé par le bouton Enregistrer)
+    @PostMapping("/permissions/save")
+    public ResponseEntity<ApiResponse<Void>> savePermissions(@RequestBody RoleMenuRequest request) {
+        menuItemService.saveRoleMenuMappings(request.getRoleId(), request.getMenuItemIds());
+        return ResponseEntity.ok(ApiResponse.success("Permissions mises à jour avec succès", null));
+    }
 }
