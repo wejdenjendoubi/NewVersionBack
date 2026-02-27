@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Date;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -27,7 +26,8 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private EmailService emailService;
-
+    @Autowired
+    private SiteRepository siteRepository;
     @Override
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll().stream()
@@ -86,21 +86,25 @@ public class UserServiceImpl implements UserService {
     }
 
     private void updateUserFields(User user, UserDTO dto) {
-        // On ne met à jour que si le DTO contient une valeur (évite les NULL en base)
         if (dto.getUserName() != null) user.setUsername(dto.getUserName());
         if (dto.getEmail() != null) user.setEmail(dto.getEmail());
         if (dto.getFirstName() != null) user.setFirstName(dto.getFirstName());
         if (dto.getLastName() != null) user.setLastName(dto.getLastName());
 
-
-
-        // Gestion du rôle normale (sans crash)
+        // 1. GESTION DU RÔLE
         if (dto.getRoleName() != null && !dto.getRoleName().isEmpty()) {
             roleRepository.findAll().stream()
                     .filter(r -> r.getRoleName().equalsIgnoreCase(dto.getRoleName()))
                     .findFirst()
                     .ifPresent(user::setRole);
-            // .ifPresent signifie : si on le trouve on change, sinon on touche à rien
+        }
+
+        // 2. GESTION DU SITE (C'était la partie manquante !)
+        if (dto.getSiteName() != null && !dto.getSiteName().isEmpty()) {
+            siteRepository.findAll().stream()
+                    .filter(s -> s.getSiteName().equalsIgnoreCase(dto.getSiteName()))
+                    .findFirst()
+                    .ifPresent(user::setSite);
         }
     }
 
