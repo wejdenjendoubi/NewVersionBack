@@ -1,7 +1,9 @@
 package com.example.CWMS.repository;
 
 import com.example.CWMS.model.User;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -18,4 +20,10 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     @Query("SELECT u FROM User u WHERE u.role.roleId = :roleId")
     List<User> findByRoleId(Integer roleId);
+
+
+    @Query("UPDATE User u SET u.failedAttempts = ?2 WHERE u.username = ?1")
+    @Modifying
+    @Transactional
+    void updateFailedAttempts(String username, int failAttempts);
 }

@@ -32,6 +32,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/signin").permitAll()
                         .requestMatchers("/api/auth/**").permitAll() // Autorise login/register sans token
                         .requestMatchers("/api/menu-items/me").authenticated()
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")

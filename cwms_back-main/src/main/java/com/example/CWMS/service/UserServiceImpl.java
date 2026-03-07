@@ -6,6 +6,7 @@ import com.example.CWMS.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,8 +27,10 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private EmailService emailService;
+
     @Autowired
     private SiteRepository siteRepository;
+
     @Override
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll().stream()
@@ -43,6 +46,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserDTO createUser(UserDTO userDTO) {
         User user = new User();
 
@@ -55,34 +59,38 @@ public class UserServiceImpl implements UserService {
         // 3. Hachage du mot de passe pour la sécurité
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
 
+        // Initialisation des champs de sécurité pour un nouveau compte
+        user.setFailedAttempts(0);
+        user.setAccountNonLocked(true);
         user.setCreatedAt(LocalDateTime.now());
+
         if (user.getIsActive() == null) {
             user.setIsActive(true);
-        } // Activation par défaut
+        }
 
         User savedUser = userRepository.save(user);
 
-        // 4. Envoi du mail avec les identifiants en clair (avant hachage)
+        // 4. Envoi du mail avec les identifiants
         emailService.sendCredentials(savedUser.getEmail(), savedUser.getUsername(), rawPassword);
 
         return mapToDTO(savedUser);
     }
 
     @Override
+    @Transactional
     public UserDTO updateUser(Integer id, UserDTO userDTO) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-
         updateUserFields(user, userDTO);
         user.setUpdatedAt(LocalDateTime.now());
 
-        // Sauvegarde et retour
         User updatedUser = userRepository.save(user);
         return mapToDTO(updatedUser);
     }
 
     @Override
+    @Transactional
     public void deleteUser(Integer id) {
         userRepository.deleteById(id);
     }
@@ -92,10 +100,22 @@ public class UserServiceImpl implements UserService {
         if (dto.getEmail() != null) user.setEmail(dto.getEmail());
         if (dto.getFirstName() != null) user.setFirstName(dto.getFirstName());
         if (dto.getLastName() != null) user.setLastName(dto.getLastName());
+
+        // --- LOGIQUE DE DÉBLOCAGE ET ACTIVATION ---
         if (dto.getIsActive() != null) {
-            // Si isActive dans le DTO est un Integer (1 ou 0)
-            user.setIsActive(dto.getIsActive() == 1);
+            boolean requestedActive = (dto.getIsActive() == 1);
+
+            // Si l'admin active le compte, on réinitialise TOUS les verrous de sécurité
+            if (requestedActive) {
+                user.setIsActive(true);
+                user.setAccountNonLocked(true); // Déverrouillage forcé
+                user.setFailedAttempts(0);      // Remise à zéro des essais
+                user.setLockTime(null);         // Suppression du timestamp de blocage
+            } else {
+                user.setIsActive(false);
+            }
         }
+
         // 1. GESTION DU RÔLE
         if (dto.getRoleName() != null && !dto.getRoleName().isEmpty()) {
             roleRepository.findAll().stream()
@@ -104,7 +124,7 @@ public class UserServiceImpl implements UserService {
                     .ifPresent(user::setRole);
         }
 
-        // 2. GESTION DU SITE (C'était la partie manquante !)
+        // 2. GESTION DU SITE
         if (dto.getSiteName() != null && !dto.getSiteName().isEmpty()) {
             siteRepository.findAll().stream()
                     .filter(s -> s.getSiteName().equalsIgnoreCase(dto.getSiteName()))
@@ -120,7 +140,13 @@ public class UserServiceImpl implements UserService {
         dto.setEmail(user.getEmail());
         dto.setFirstName(user.getFirstName());
         dto.setLastName(user.getLastName());
-        dto.setIsActive(user.getIsActive() != null && user.getIsActive() ? 1 : 0);
+
+        // On renvoie 1 si le compte est actif ET non verrouillé par le système
+        boolean isReallyActive = (user.getIsActive() != null && user.getIsActive())
+                && (user.getAccountNonLocked() != null && user.getAccountNonLocked());
+
+        dto.setIsActive(isReallyActive ? 1 : 0);
+
         if (user.getRole() != null) {
             dto.setRoleName(user.getRole().getRoleName());
         }

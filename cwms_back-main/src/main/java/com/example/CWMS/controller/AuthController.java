@@ -2,8 +2,9 @@ package com.example.CWMS.controller;
 
 import com.example.CWMS.payload.*;
 import com.example.CWMS.Security.JwtUtils;
-import com.example.CWMS.service.AuditService;  // ✅ import
-import jakarta.servlet.http.HttpServletRequest;  // ✅ import
+import com.example.CWMS.service.AuditService;
+import com.example.CWMS.service.LoginAttemptService; // ✅ Nouveau service
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,19 +31,33 @@ public class AuthController {
     private BCryptPasswordEncoder encoder;
 
     @Autowired
-    private AuditService auditService;  // ✅ injecter AuditService
+    private AuditService auditService;
+
+    @Autowired
+    private LoginAttemptService loginAttemptService; // ✅ Injection pour la sécurité brute-force
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest,
-                                              HttpServletRequest httpRequest) { // ✅ ajouter HttpServletRequest
+                                              HttpServletRequest httpRequest) {
+
+        String username = loginRequest.getUsername();
+        String ipAddress = extractIp(httpRequest);
+        String userAgent = httpRequest.getHeader("User-Agent");
+
+        // 1. VÉRIFICATION PRÉALABLE : Le compte est-il déjà bloqué ?
+        if (loginAttemptService.isBlocked(username)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Votre compte est bloqué suite à 3 tentatives infructueuses. Veuillez contacter l'administrateur.");
+        }
 
         try {
+            // 2. TENTATIVE D'AUTHENTIFICATION
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            loginRequest.getUsername(),
-                            loginRequest.getPassword()
-                    )
+                    new UsernamePasswordAuthenticationToken(username, loginRequest.getPassword())
             );
+
+            // 3. SUCCÈS : Réinitialisation du compteur de tentatives
+            loginAttemptService.loginSucceeded(username);
 
             String jwt = jwtUtils.generateJwtToken(authentication);
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -51,42 +66,37 @@ public class AuthController {
                     .map(item -> item.getAuthority())
                     .collect(Collectors.toList());
 
-            // ✅ Log connexion réussie
-            auditService.logLogin(
-                    loginRequest.getUsername(),
-                    extractIp(httpRequest),
-                    httpRequest.getHeader("User-Agent"),
-                    true,
-                    null
-            );
+            // ✅ Log connexion réussie dans l'Audit
+            auditService.logLogin(username, ipAddress, userAgent, true, "Connexion réussie");
 
             return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getUsername(), roles));
 
         } catch (BadCredentialsException e) {
+            // 4. ÉCHEC : Incrémenter le compteur de tentatives
+            loginAttemptService.loginFailed(username);
 
-            // ✅ Log échec connexion
-            auditService.logLogin(
-                    loginRequest.getUsername(),
-                    extractIp(httpRequest),
-                    httpRequest.getHeader("User-Agent"),
-                    false,
-                    null
-            );
+            int remaining = loginAttemptService.getRemainingAttempts(username);
+            String errorMessage = (remaining > 0)
+                    ? "Identifiants incorrects. Il vous reste " + remaining + " tentative(s)."
+                    : "Compte bloqué après trop de tentatives infructueuses.";
 
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Username or password incorrect");
+            // ✅ Log échec connexion dans l'Audit
+            auditService.logLogin(username, ipAddress, userAgent, false, errorMessage);
 
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorMessage);
+
+        } catch (DisabledException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Compte désactivé.");
+        } catch (LockedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Compte verrouillé.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error: " + e.getMessage());
+                    .body("Erreur serveur : " + e.getMessage());
         }
     }
 
-    // ✅ Endpoint logout — Angular appelle ça avant de supprimer le token
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest httpRequest) {
-
-        // Récupérer le username depuis le token JWT
         String username = extractUsernameFromToken(httpRequest);
 
         // ✅ Log déconnexion

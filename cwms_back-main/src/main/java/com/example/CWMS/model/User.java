@@ -53,6 +53,18 @@ public class User {
     @Column(name = "PasswordHash", length = 500)
     private String passwordHash;
 
+    @Column(name = "failed_attempts")
+    private Integer failedAttempts = 0;
+
+    @Column(name = "account_non_locked")
+    private Boolean accountNonLocked = true;
+
+    @Column(name = "lock_time")
+    private LocalDateTime lockTime;
+    public boolean isAccountLocked() {
+        return !this.accountNonLocked;
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
