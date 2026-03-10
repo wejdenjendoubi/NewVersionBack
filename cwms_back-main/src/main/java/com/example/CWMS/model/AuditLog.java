@@ -24,12 +24,12 @@ public class AuditLog {
     @Column(nullable = false, length = 20)
     private Severity severity;
 
-    // ✅ FK vers votre Users(UserId) — Integer comme dans votre User.java
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "UserId")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User user;
 
-    // Snapshot dénormalisé (reste lisible même si user supprimé)
     @Column(length = 100)
     private String username;
 
@@ -89,6 +89,7 @@ public class AuditLog {
     public enum EventType {
         LOGIN, LOGOUT, LOGIN_FAILED,
         CREATE, UPDATE, DELETE, READ,
+        CREATE_FAILED,   // ✅ nouveau : tentative échouée (email doublon, etc.)
         ERROR, EXPORT, IMPORT
     }
 

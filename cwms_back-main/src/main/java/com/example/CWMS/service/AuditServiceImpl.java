@@ -15,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -88,6 +90,59 @@ public class AuditServiceImpl implements AuditService {
         }
     }
 
+    /**
+     * ✅ Variante de logAction qui accepte un username en snapshot.
+     * Utile après suppression d'un user (on ne peut plus faire findByUsername).
+     */
+    public void logActionWithUsername(String action, String entityType, String entityId,
+                                      String snapshotUsername, Object oldObj, Object newObj) {
+        try {
+            AuditLog.AuditLogBuilder builder = AuditLog.builder()
+                    .eventType    (resolveEventType(action))
+                    .severity     (Severity.INFO)
+                    .action       (action)
+                    .entityType   (entityType)
+                    .entityId     (entityId)
+                    .username     (snapshotUsername)   // snapshot dénormalisé
+                    .oldValue     (toJson(oldObj))
+                    .newValue     (toJson(newObj))
+                    .correlationId(UUID.randomUUID().toString());
+
+            // On enrichit avec l'admin qui effectue l'action (pas le user supprimé)
+            enrichWithCurrentUser(builder);
+            save(builder.build());
+
+        } catch (Exception e) {
+            log.error("Erreur logActionWithUsername: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * ✅ Log une tentative de création échouée (email doublon, username doublon...).
+     * S'exécute dans une transaction SÉPARÉE pour ne pas être rollbacké
+     * avec la transaction principale qui échoue.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logFailedCreation(String targetValue, String reason, String details) {
+        try {
+            AuditLog.AuditLogBuilder builder = AuditLog.builder()
+                    .eventType    (EventType.CREATE_FAILED)
+                    .severity     (Severity.WARNING)
+                    .action       ("USER_CREATE_FAILED")
+                    .entityType   ("User")
+                    .entityId     (targetValue)
+                    .errorMessage (details)
+                    .oldValue     (reason)
+                    .correlationId(UUID.randomUUID().toString());
+
+            enrichWithCurrentUser(builder);
+            save(builder.build());
+
+        } catch (Exception e) {
+            log.error("Erreur logFailedCreation: {}", e.getMessage());
+        }
+    }
+
     // ── ERREURS ───────────────────────────────────────────────
 
     @Override
@@ -125,16 +180,26 @@ public class AuditServiceImpl implements AuditService {
 
     @Override
     public void enrichWithCurrentUser(AuditLog.AuditLogBuilder builder) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated()
-                && !"anonymousUser".equals(auth.getPrincipal())) {
-            String username = auth.getName();
-            builder.username(username);
-            userRepository.findByUsername(username).ifPresent(builder::user);
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()
+                    && !"anonymousUser".equals(auth.getPrincipal())) {
+                String username = auth.getName();
+                builder.username(username);
+                // ✅ Vérification id non null pour éviter le crash session Hibernate
+                userRepository.findByUsername(username).ifPresent(u -> {
+                    if (u.getUserId() != null) {
+                        builder.user(u);
+                    }
+                });
+            }
+        } catch (Exception e) {
+            log.warn("enrichWithCurrentUser ignoré: {}", e.getMessage());
         }
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void save(AuditLog auditLog) {
         try {
             AuditLog saved = auditLogRepository.save(auditLog);
@@ -162,6 +227,7 @@ public class AuditServiceImpl implements AuditService {
         if (a.contains("CREATE") || a.contains("ADD")    || a.contains("SAVE"))    return EventType.CREATE;
         if (a.contains("UPDATE") || a.contains("EDIT")   || a.contains("MODIF"))   return EventType.UPDATE;
         if (a.contains("DELETE") || a.contains("REMOVE") || a.contains("SUPPRIM")) return EventType.DELETE;
+        if (a.contains("FAILED") || a.contains("ECHEC"))                           return EventType.CREATE_FAILED;
         return EventType.READ;
     }
 

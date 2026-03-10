@@ -50,12 +50,23 @@ public class AdminController {
     public ResponseEntity<ApiResponse<UserDTO>> updateUser(@PathVariable Integer id, @RequestBody UserDTO userDTO) {
         UserDTO updatedUser = userService.updateUser(id, userDTO);
         return ResponseEntity.ok(ApiResponse.success("Utilisateur mis à jour", updatedUser));
+    }@DeleteMapping("/users/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Integer id) {
+        try {
+            userService.deleteUser(id);
+            return ResponseEntity.ok(ApiResponse.success("Utilisateur supprimé (traçabilité conservée)", null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(ApiResponse.error(e.getMessage()));
+        }
     }
 
-    // 6. Supprimer un utilisateur
-    @DeleteMapping("/users/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Integer id) {
-        userService.deleteUser(id);
-        return ResponseEntity.ok(ApiResponse.success("Utilisateur supprimé", null));
+    @DeleteMapping("/users /{id}/force")
+    public ResponseEntity<?> forceDeleteUser(@PathVariable Integer id) {
+        try {
+            userService.forceDeleteUser(id);
+            return ResponseEntity.ok(ApiResponse.success("Utilisateur et traçabilité supprimés définitivement", null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(ApiResponse.error(e.getMessage()));
+        }
     }
 }
