@@ -1,6 +1,8 @@
 package com.example.CWMS.service;
 
+import com.example.CWMS.audit.Auditable;
 import com.example.CWMS.dto.MenuItemDTO;
+import com.example.CWMS.iservice.MenuItemService;
 import com.example.CWMS.model.MenuItem;
 import com.example.CWMS.model.User;
 import com.example.CWMS.repository.MenuItemRepository;
@@ -16,7 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class MenuItemService {
+public class MenuItemServiceImpl implements MenuItemService {
 
     private final MenuItemRepository menuItemRepository;
     private final UserRepository userRepository;
@@ -42,8 +44,9 @@ public class MenuItemService {
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
-
+    @Override
     @Transactional
+    @Auditable(action = "MENU_CREATED", entityType = "MenuItem")
     public MenuItemDTO createMenuItem(MenuItemDTO request) {
         MenuItem item = MenuItem.builder()
                 .label(request.getLabel())
@@ -55,8 +58,9 @@ public class MenuItemService {
                 .build();
         return toDTO(menuItemRepository.save(item));
     }
-
+    @Override
     @Transactional
+    @Auditable(action = "MENU_UPDATED", entityType = "MenuItem")
     public MenuItemDTO updateMenuItem(Integer id, MenuItemDTO request) {
         MenuItem item = menuItemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("MenuItem not found: " + id));
@@ -67,12 +71,14 @@ public class MenuItemService {
         return toDTO(menuItemRepository.save(item));
     }
 
+    @Override
     @Transactional
+    @Auditable(action = "MENU_DELETED", entityType = "MenuItem")
     public void deleteMenuItem(Integer id) {
         menuItemRepository.deleteById(id);
     }
 
-    private MenuItemDTO toDTO(MenuItem item) {
+    public MenuItemDTO toDTO(MenuItem item) {
         return MenuItemDTO.builder()
                 .menuItemId(item.getMenuItemId())
                 .label(item.getLabel())
@@ -85,8 +91,9 @@ public class MenuItemService {
                 .updatedAt(item.getUpdatedAt())
                 .build();
     }
-
+    @Override
     @Transactional
+    @Auditable(action = "MENU_SAVED",entityType = "MenuItem")
     public void saveRoleMenuMappings(Integer roleId, List<Integer> menuItemIds) {
         // 1. Supprimer les anciens accès pour ce rôle
         roleMenuMappingRepository.deleteByRoleId(roleId);

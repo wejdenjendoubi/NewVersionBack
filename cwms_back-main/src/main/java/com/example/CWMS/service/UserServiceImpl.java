@@ -1,6 +1,8 @@
 package com.example.CWMS.service;
 
+import com.example.CWMS.audit.Auditable;
 import com.example.CWMS.dto.UserDTO;
+import com.example.CWMS.iservice.UserService;
 import com.example.CWMS.model.*;
 import com.example.CWMS.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +28,7 @@ public class UserServiceImpl implements UserService {
     private BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
-    private EmailService emailService;
+    private EmailServiceImpl emailService;
 
     @Autowired
     private SiteRepository siteRepository;
@@ -47,6 +49,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @Auditable(action = "USER_CREATED", entityType = "User")
     public UserDTO createUser(UserDTO userDTO) {
         User user = new User();
 
@@ -74,6 +77,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @Auditable(action = "USER_UPDATED", entityType = "User")
     public UserDTO updateUser(Integer id, UserDTO userDTO) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
@@ -87,6 +91,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @Auditable(action = "USER_DELETED", entityType = "User")
     public void deleteUser(Integer id) {
         userRepository.deleteById(id);
     }
@@ -129,7 +134,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private UserDTO mapToDTO(User user) {
+    public UserDTO mapToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getUserId());
         dto.setUserName(user.getUsername());

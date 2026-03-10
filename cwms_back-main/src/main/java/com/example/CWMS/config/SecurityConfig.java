@@ -33,7 +33,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/signin").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll() // Autorise login/register sans token
+                        .requestMatchers("/api/auth/**").permitAll()// Autorise login/register sans token
+                        .requestMatchers("/api/audit/**").authenticated()
                         .requestMatchers("/api/menu-items/me").authenticated()
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/user/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MAGASINIER", "ROLE_RESPONSABLE_MAGASIN", "ROLE_CONSULTATION")

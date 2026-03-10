@@ -14,27 +14,51 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-public class  JwtFilter extends OncePerRequestFilter {
+public class JwtFilter extends OncePerRequestFilter {
+
     @Autowired private JwtUtils jwtUtils;
     @Autowired private UserDetailsService userDetailsService;
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return request.getServletPath().startsWith("/api/auth/");
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
             throws ServletException, IOException {
+
         String headerAuth = request.getHeader("Authorization");
+
+        System.out.println("=== JwtFilter === " + request.getMethod() + " " + request.getRequestURI());
+        System.out.println("Authorization header: " + (headerAuth != null ? "présent" : "ABSENT"));
+
         if (headerAuth != null && headerAuth.startsWith("Bearer ")) {
             String jwt = headerAuth.substring(7);
-            if (jwtUtils.validateJwtToken(jwt)) {
+            boolean valid = jwtUtils.validateJwtToken(jwt);
+            System.out.println("Token valide: " + valid);
+
+            if (valid) {
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+                System.out.println("✅ Username: " + username);
+                System.out.println("✅ Authorities: " + userDetails.getAuthorities());
+
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(auth);
+                System.out.println("✅ Auth set dans SecurityContext");
+            } else {
+                System.out.println("❌ Token invalide ou expiré");
             }
+        } else {
+            System.out.println("❌ Pas de Bearer token dans la requête");
         }
+
         filterChain.doFilter(request, response);
     }
 }

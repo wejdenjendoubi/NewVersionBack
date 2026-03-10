@@ -2,7 +2,7 @@ package com.example.CWMS.controller;
 
 import com.example.CWMS.dto.ApiResponse; // Import de ton DTO ApiResponse
 import com.example.CWMS.dto.UserDTO;
-import com.example.CWMS.service.UserService;
+import com.example.CWMS.iservice.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,5 +1,6 @@
 package com.example.CWMS.service;
 
+import com.example.CWMS.iservice.EmailValidationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -18,9 +19,9 @@ import java.util.Hashtable;
 import java.util.List;
 
 @Service
-public class EmailValidationService {
+public class EmailValidationServiceImpl implements EmailValidationService {
 
-    private static final Logger log = LoggerFactory.getLogger(EmailValidationService.class);
+    private static final Logger log = LoggerFactory.getLogger(EmailValidationServiceImpl.class);
 
     // ⏱️ Timeouts configurables — courts pour ne pas bloquer l'application
     private static final int DNS_TIMEOUT_MS  = 3000; // 3s pour la résolution MX
@@ -64,7 +65,7 @@ public class EmailValidationService {
     // ─────────────────────────────────────────────────────────────
     // ÉTAPE 1 : Résolution DNS des enregistrements MX
     // ─────────────────────────────────────────────────────────────
-    private List<String> resolveMxRecords(String domain) {
+    public List<String> resolveMxRecords(String domain) {
         List<String> mxHosts = new ArrayList<>();
         try {
             Hashtable<String, String> env = new Hashtable<>();
@@ -107,7 +108,7 @@ public class EmailValidationService {
      *         Boolean.FALSE → adresse rejetée (550/551/553...)
      *         null          → serveur injoignable (timeout, connexion refusée)
      */
-    private Boolean trySmtpHandshake(String mxHost, String recipientEmail) {
+    public Boolean trySmtpHandshake(String mxHost, String recipientEmail) {
         log.debug("Tentative SMTP sur {} pour {}", mxHost, recipientEmail);
 
         try (Socket socket = new Socket()) {
@@ -173,7 +174,7 @@ public class EmailValidationService {
      * Une réponse se termine quand la ligne ne contient pas de tiret après le code.
      * Ex: "250-SIZE 35882577" (continue) vs "250 OK" (fin)
      */
-    private String readSmtpResponse(BufferedReader reader) throws Exception {
+    public String readSmtpResponse(BufferedReader reader) throws Exception {
         StringBuilder response = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) {

@@ -1,6 +1,6 @@
 package com.example.CWMS.service;
 
-import com.example.CWMS.model.User;
+import com.example.CWMS.iservice.LoginAttemptService;
 import com.example.CWMS.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Service
 @Transactional
-public class LoginAttemptService {
+public class LoginAttemptServiceImpl implements LoginAttemptService {
     public static final int MAX_ATTEMPTS = 3;
 
     @Autowired

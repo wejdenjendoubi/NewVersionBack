@@ -1,4 +1,4 @@
-package com.example.CWMS.service;
+package com.example.CWMS.iservice;
 
 import com.example.CWMS.model.Site;
 

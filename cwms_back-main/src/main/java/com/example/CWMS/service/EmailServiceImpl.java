@@ -1,6 +1,7 @@
 package com.example.CWMS.service;
 
 import com.example.CWMS.exception.EmailValidationException;
+import com.example.CWMS.iservice.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,15 +10,15 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
-public class EmailService {
+public class EmailServiceImpl implements EmailService {
 
-    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+    private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
 
     @Autowired
     private JavaMailSender mailSender;
 
     @Autowired
-    private EmailValidationService emailValidationService;
+    private EmailValidationServiceImpl emailValidationService;
 
     /**
      * Valide l'email AVANT d'envoyer quoi que ce soit.

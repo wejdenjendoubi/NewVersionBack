@@ -2,8 +2,8 @@ package com.example.CWMS.controller;
 
 import com.example.CWMS.payload.*;
 import com.example.CWMS.Security.JwtUtils;
-import com.example.CWMS.service.AuditService;
-import com.example.CWMS.service.LoginAttemptService; // ✅ Nouveau service
+import com.example.CWMS.service.AuditServiceImpl;
+import com.example.CWMS.service.LoginAttemptServiceImpl; // ✅ Nouveau service
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,10 +31,10 @@ public class AuthController {
     private BCryptPasswordEncoder encoder;
 
     @Autowired
-    private AuditService auditService;
+    private AuditServiceImpl auditService;
 
     @Autowired
-    private LoginAttemptService loginAttemptService; // ✅ Injection pour la sécurité brute-force
+    private LoginAttemptServiceImpl loginAttemptService; // ✅ Injection pour la sécurité brute-force
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest,

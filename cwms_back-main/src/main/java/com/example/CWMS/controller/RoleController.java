@@ -1,10 +1,9 @@
 package com.example.CWMS.controller;
 
 import com.example.CWMS.dto.*;
-import com.example.CWMS.service.RoleService;
+import com.example.CWMS.service.RoleServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -13,7 +12,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RoleController {
 
-    private final RoleService roleService;
+    private final RoleServiceImpl roleService;
     @GetMapping
 
     public ResponseEntity<ApiResponse<List<RoleDTO>>> getAllRoles() {

@@ -1,6 +1,7 @@
 package com.example.CWMS.service;
 
 import com.example.CWMS.dto.*;
+import com.example.CWMS.iservice.RoleService;
 import com.example.CWMS.model.*;
 import com.example.CWMS.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class RoleService {
+public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
     private final RoleMenuMappingRepository roleMenuMappingRepository;
@@ -78,7 +79,7 @@ public class RoleService {
         return roleMenuMappingRepository.findMenuItemIdsByRoleId(roleId);
     }
 
-    private RoleDTO toDTO(Role role) {
+    public RoleDTO toDTO(Role role) {
         List<Integer> menuIds = roleMenuMappingRepository.findMenuItemIdsByRoleId(role.getRoleId());
         long userCount = userRepository.findByRoleId(role.getRoleId()).size();
 

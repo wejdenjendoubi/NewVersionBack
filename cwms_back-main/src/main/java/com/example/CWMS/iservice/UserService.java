@@ -1,6 +1,7 @@
-package com.example.CWMS.service;
+package com.example.CWMS.iservice;
 
 import com.example.CWMS.dto.UserDTO;
+import com.example.CWMS.model.User;
 
 import java.util.List;
 
@@ -10,4 +11,5 @@ public interface UserService {
     UserDTO createUser(UserDTO userDTO);
     UserDTO updateUser(Integer id, UserDTO userDTO);
     void deleteUser(Integer id);
+    UserDTO mapToDTO(User user);
 }

@@ -1,7 +1,7 @@
 package com.example.CWMS.controller;
 
 import com.example.CWMS.dto.*;
-import com.example.CWMS.service.MenuItemService;
+import com.example.CWMS.service.MenuItemServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +12,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MenuItemController {
 
-    private final MenuItemService menuItemService;
+    private final MenuItemServiceImpl menuItemService;
 
     // Route dynamique pour charger le menu selon le rôle de l'utilisateur connecté
     @GetMapping("/me")

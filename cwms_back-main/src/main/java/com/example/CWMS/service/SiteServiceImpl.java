@@ -1,5 +1,6 @@
 package com.example.CWMS.service;
 
+import com.example.CWMS.iservice.SiteService;
 import com.example.CWMS.model.Site;
 import com.example.CWMS.repository.SiteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
