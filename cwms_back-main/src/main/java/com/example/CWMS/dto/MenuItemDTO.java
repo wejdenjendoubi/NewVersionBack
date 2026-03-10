@@ -14,7 +14,7 @@ public class MenuItemDTO {
     private String label;
     private String icon;
     private String link;
-    private MenuItem parentId;
+    private Integer parentId;
     private Boolean isTitle;
     private Boolean isLayout;
     private LocalDateTime createdAt;
